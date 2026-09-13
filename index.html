@@ -930,8 +930,11 @@ function renderCalendar(){
   function addEv(day,ev){ (eventsByDay[day]=eventsByDay[day]||[]).push(ev); }
   DB.expenses.forEach(e=>{ const d=new Date(e.data+'T00:00:00'); if(d.getMonth()===m && d.getFullYear()===y) addEv(d.getDate(),{type:'Despesa',color:'red',text:e.desc,value:e.valor}); });
   DB.incomes.forEach(i=>{ const d=new Date(i.data+'T00:00:00'); if(d.getMonth()===m && d.getFullYear()===y) addEv(d.getDate(),{type:'Receita',color:'green',text:i.desc,value:i.valor}); });
-  DB.cards.forEach(c=>{ if(c.vencimento<=daysInMonth) addEv(c.vencimento,{type:'Fatura',color:'blue',text:'Fatura '+c.apelido,value:cardCurrentInvoice(c).total}); });
-  DB.debts.forEach(d=>{ const day=parseInt(d.vencimento); if(day && day<=daysInMonth) addEv(day,{type:'Dívida',color:'amber',text:d.credor,value:d.valorParcela}); });
+  const isPastMonth = (y<now.getFullYear()) || (y===now.getFullYear() && m<now.getMonth());
+  if(!isPastMonth){
+    DB.cards.forEach(c=>{ if(c.vencimento<=daysInMonth) addEv(c.vencimento,{type:'Fatura',color:'blue',text:'Fatura '+c.apelido,value:cardCurrentInvoice(c).total}); });
+    DB.debts.forEach(d=>{ const day=parseInt(d.vencimento); if(day && day<=daysInMonth) addEv(day,{type:'Dívida',color:'amber',text:d.credor,value:d.valorParcela}); });
+  }
 
   const sel = S.calSelected || (isCurrentMonth ? now.getDate() : 1);
   let cells='';
@@ -1199,8 +1202,9 @@ function openForm(type, extra){
     debt: {title:'Nova dívida', fields:`
       <div class="field"><label>Credor</label><input id="f_desc" placeholder="Ex: Empréstimo Banco X"></div>
       <div class="field"><label>Tipo</label><select id="f_tipo"><option>Cartão</option><option>Empréstimo</option><option>Financiamento</option><option>Pessoa física</option><option>Banco</option><option>Loja</option><option>Outras</option></select></div>
-      <div class="field-row"><div class="field"><label>Valor atual (R$)</label><input id="f_valor" type="number" step="0.01"></div><div class="field"><label>Juros (% a.a.)</label><input id="f_juros" type="number" step="0.1"></div></div>
-      <div class="field-row"><div class="field"><label>Nº de parcelas</label><input id="f_parcelas" type="number" value="12"></div><div class="field"><label>Valor da parcela</label><input id="f_parcela" type="number" step="0.01"></div></div>
+      <div class="field-row"><div class="field"><label>Valor atual (R$)</label><input id="f_valor" type="number" step="0.01" oninput="const v=parseFloat(this.value)||0, p=parseInt(document.getElementById('f_parcelas').value)||1; document.getElementById('f_parcela').value=(v/p).toFixed(2);"></div><div class="field"><label>Juros (% a.a.)</label><input id="f_juros" type="number" step="0.1"></div></div>
+      <div class="field-row"><div class="field"><label>Nº de parcelas</label><input id="f_parcelas" type="number" value="12" oninput="const v=parseFloat(document.getElementById('f_valor').value)||0, p=parseInt(this.value)||1; document.getElementById('f_parcela').value=(v/p).toFixed(2);"></div><div class="field"><label>Valor da parcela</label><input id="f_parcela" type="number" step="0.01"></div></div>
+      <p class="small muted" style="margin:0 0 4px 0;">O valor da parcela é calculado automaticamente (valor atual ÷ nº de parcelas), mas você pode ajustar manualmente se houver juros nas parcelas.</p>
       <div class="field"><label>Dia de vencimento</label><input id="f_venc" placeholder="Ex: 15"></div>
     `},
     card: {title: extra&&extra.editId ? 'Editar cartão' : 'Novo cartão', fields:(()=>{
@@ -1258,8 +1262,10 @@ function saveForm(type, cardid, editId){
     }
     DB.expenses.push(exp);
   } else if(type==='debt'){
-    const parcela = parseFloat(val('f_parcela'))||0;
-    DB.debts.push({id:uid(), credor:val('f_desc')||'Dívida', tipo:val('f_tipo'), valorOriginal:parseFloat(val('f_valor'))||0, valorAtual:parseFloat(val('f_valor'))||0, juros:parseFloat(val('f_juros'))||0, parcelas:parseInt(val('f_parcelas'))||1, pagas:0, valorParcela:parcela, vencimento:val('f_venc')||'—', status:'Ativa'});
+    const valorAtual = parseFloat(val('f_valor'))||0;
+    const numParcelas = parseInt(val('f_parcelas'))||1;
+    const parcela = parseFloat(val('f_parcela')) || (valorAtual/numParcelas);
+    DB.debts.push({id:uid(), credor:val('f_desc')||'Dívida', tipo:val('f_tipo'), valorOriginal:valorAtual, valorAtual:valorAtual, juros:parseFloat(val('f_juros'))||0, parcelas:numParcelas, pagas:0, valorParcela:parcela, vencimento:val('f_venc')||'—', status:'Ativa'});
   } else if(type==='card'){
     if(editId){
       const c = findCard(editId);

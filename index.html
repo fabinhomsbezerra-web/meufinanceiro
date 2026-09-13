@@ -306,7 +306,7 @@ let DB = {
   ],
   expensesPrevMonth:{'Moradia':1450,'Alimentação':860,'Combustível':690,'Saúde':500,'Lazer':300,'Cartão de crédito':420,'Assinaturas':300,'Outros':260},
   cards:[
-    {id:'c1', nome:'Nubank Roxinho', banco:'Nu Pagamentos', apelido:'Nubank', ultimos4:'4521', limite:4000, fechamento:3, vencimento:10, cor:'linear-gradient(135deg,#7c3aed,#4c1d95)', contaPagamento:'Nubank Digital', ativo:true,
+    {id:'c1', nome:'Nubank Roxinho', banco:'Nu Pagamentos', apelido:'Nubank', ultimos4:'4521', limite:4000, fechamento:3, vencimento:10, cor:'linear-gradient(135deg,#7c3aed,#4c1d95)', contaPagamento:'Nubank Digital', ativo:true, criadoEm:'2026-01-01',
       compras:[
         {id:uid(), desc:'Supermercado Extra', valor:450, data:'2026-08-28', categoria:'Alimentação', parcelas:1, pagas:1},
         {id:uid(), desc:'Notebook Dell Inspiron', valor:2400, data:'2026-07-14', categoria:'Compras', parcelas:6, pagas:2},
@@ -317,7 +317,7 @@ let DB = {
         {id:uid(), label:'Set/2026 (atual)', status:'Aberta', total:1280, paga:0, fechamento:'03/09', vencimento:'10/09'},
         {id:uid(), label:'Out/2026', status:'Futura', total:400, paga:0, fechamento:'03/10', vencimento:'10/10'},
       ]},
-    {id:'c2', nome:'BB Ourocard', banco:'Banco do Brasil', apelido:'BB Platinum', ultimos4:'7788', limite:5000, fechamento:28, vencimento:5, cor:'linear-gradient(135deg,#facc15,#b45309)', contaPagamento:'Conta Corrente Itaú', ativo:true,
+    {id:'c2', nome:'BB Ourocard', banco:'Banco do Brasil', apelido:'BB Platinum', ultimos4:'7788', limite:5000, fechamento:28, vencimento:5, cor:'linear-gradient(135deg,#facc15,#b45309)', contaPagamento:'Conta Corrente Itaú', ativo:true, criadoEm:'2026-01-01',
       compras:[
         {id:uid(), desc:'Passagem aérea', valor:1800, data:'2026-07-20', categoria:'Lazer', parcelas:3, pagas:1},
         {id:uid(), desc:'Farmácia', valor:320, data:'2026-08-30', categoria:'Saúde', parcelas:1, pagas:1},
@@ -329,7 +329,7 @@ let DB = {
         {id:uid(), label:'Set/2026 (atual)', status:'Vencida', total:4200, paga:0, fechamento:'28/08', vencimento:'05/09'},
         {id:uid(), label:'Out/2026', status:'Futura', total:900, paga:0, fechamento:'28/09', vencimento:'05/10'},
       ]},
-    {id:'c3', nome:'Itaú Click', banco:'Itaú Unibanco', apelido:'Itaú', ultimos4:'3392', limite:3000, fechamento:12, vencimento:18, cor:'linear-gradient(135deg,#f97316,#ea580c)', contaPagamento:'Conta Corrente Itaú', ativo:true,
+    {id:'c3', nome:'Itaú Click', banco:'Itaú Unibanco', apelido:'Itaú', ultimos4:'3392', limite:3000, fechamento:12, vencimento:18, cor:'linear-gradient(135deg,#f97316,#ea580c)', contaPagamento:'Conta Corrente Itaú', ativo:true, criadoEm:'2026-01-01',
       compras:[
         {id:uid(), desc:'TV Samsung 55"', valor:3000, data:'2026-05-10', categoria:'Compras', parcelas:10, pagas:4},
         {id:uid(), desc:'Curso online', valor:590, data:'2026-09-01', categoria:'Educação', parcelas:1, pagas:0},
@@ -341,11 +341,11 @@ let DB = {
       ]},
   ],
   debts:[
-    {id:uid(), credor:'Cartão Nubank', tipo:'Cartão', valorOriginal:4200, valorAtual:2800, juros:12.5, parcelas:12, pagas:4, valorParcela:450, vencimento:'10/09', status:'Ativa'},
-    {id:uid(), credor:'Financiamento veículo — Santander', tipo:'Financiamento', valorOriginal:32640, valorAtual:8500, juros:7.2, parcelas:48, pagas:24, valorParcela:680, vencimento:'15/09', status:'Ativa'},
-    {id:uid(), credor:'Empréstimo pessoal — Nubank', tipo:'Empréstimo', valorOriginal:2400, valorAtual:1800, juros:10.8, parcelas:12, pagas:3, valorParcela:200, vencimento:'20/09', status:'Ativa'},
-    {id:uid(), credor:'Cartão Itaú', tipo:'Cartão', valorOriginal:1180, valorAtual:1180, juros:9.3, parcelas:6, pagas:0, valorParcela:196.67, vencimento:'18/09', status:'Ativa'},
-    {id:uid(), credor:'Empréstimo João (pessoa física)', tipo:'Pessoa física', valorOriginal:1000, valorAtual:400, juros:0, parcelas:4, pagas:3, valorParcela:250, vencimento:'25/09', status:'Ativa'},
+    {id:uid(), credor:'Cartão Nubank', tipo:'Cartão', valorOriginal:4200, valorAtual:2800, juros:12.5, parcelas:12, pagas:4, valorParcela:450, vencimento:'10/09', status:'Ativa', criadoEm:'2026-01-01'},
+    {id:uid(), credor:'Financiamento veículo — Santander', tipo:'Financiamento', valorOriginal:32640, valorAtual:8500, juros:7.2, parcelas:48, pagas:24, valorParcela:680, vencimento:'15/09', status:'Ativa', criadoEm:'2026-01-01'},
+    {id:uid(), credor:'Empréstimo pessoal — Nubank', tipo:'Empréstimo', valorOriginal:2400, valorAtual:1800, juros:10.8, parcelas:12, pagas:3, valorParcela:200, vencimento:'20/09', status:'Ativa', criadoEm:'2026-01-01'},
+    {id:uid(), credor:'Cartão Itaú', tipo:'Cartão', valorOriginal:1180, valorAtual:1180, juros:9.3, parcelas:6, pagas:0, valorParcela:196.67, vencimento:'18/09', status:'Ativa', criadoEm:'2026-01-01'},
+    {id:uid(), credor:'Empréstimo João (pessoa física)', tipo:'Pessoa física', valorOriginal:1000, valorAtual:400, juros:0, parcelas:4, pagas:3, valorParcela:250, vencimento:'25/09', status:'Ativa', criadoEm:'2026-01-01'},
   ],
   budgets:[
     {categoria:'Moradia', limite:1500},
@@ -931,10 +931,19 @@ function renderCalendar(){
   DB.expenses.forEach(e=>{ const d=new Date(e.data+'T00:00:00'); if(d.getMonth()===m && d.getFullYear()===y) addEv(d.getDate(),{type:'Despesa',color:'red',text:e.desc,value:e.valor}); });
   DB.incomes.forEach(i=>{ const d=new Date(i.data+'T00:00:00'); if(d.getMonth()===m && d.getFullYear()===y) addEv(d.getDate(),{type:'Receita',color:'green',text:i.desc,value:i.valor}); });
   const isPastMonth = (y<now.getFullYear()) || (y===now.getFullYear() && m<now.getMonth());
-  if(!isPastMonth){
-    DB.cards.forEach(c=>{ if(c.vencimento<=daysInMonth) addEv(c.vencimento,{type:'Fatura',color:'blue',text:'Fatura '+c.apelido,value:cardCurrentInvoice(c).total}); });
-    DB.debts.forEach(d=>{ const day=parseInt(d.vencimento); if(day && day<=daysInMonth) addEv(day,{type:'Dívida',color:'amber',text:d.credor,value:d.valorParcela}); });
-  }
+  const isFutureMonth = (y>now.getFullYear()) || (y===now.getFullYear() && m>now.getMonth());
+  DB.cards.forEach(c=>{
+    if(c.vencimento>daysInMonth) return;
+    const criado = c.criadoEm ? new Date(c.criadoEm+'T00:00:00') : null;
+    const occurrence = new Date(y, m, c.vencimento);
+    if(isFutureMonth || (!isPastMonth && (!criado || occurrence>=criado))) addEv(c.vencimento,{type:'Fatura',color:'blue',text:'Fatura '+c.apelido,value:cardCurrentInvoice(c).total});
+  });
+  DB.debts.forEach(d=>{
+    const day=parseInt(d.vencimento); if(!day || day>daysInMonth) return;
+    const criado = d.criadoEm ? new Date(d.criadoEm+'T00:00:00') : null;
+    const occurrence = new Date(y, m, day);
+    if(isFutureMonth || (!isPastMonth && (!criado || occurrence>=criado))) addEv(day,{type:'Dívida',color:'amber',text:d.credor,value:d.valorParcela});
+  });
 
   const sel = S.calSelected || (isCurrentMonth ? now.getDate() : 1);
   let cells='';
@@ -1265,7 +1274,7 @@ function saveForm(type, cardid, editId){
     const valorAtual = parseFloat(val('f_valor'))||0;
     const numParcelas = parseInt(val('f_parcelas'))||1;
     const parcela = parseFloat(val('f_parcela')) || (valorAtual/numParcelas);
-    DB.debts.push({id:uid(), credor:val('f_desc')||'Dívida', tipo:val('f_tipo'), valorOriginal:valorAtual, valorAtual:valorAtual, juros:parseFloat(val('f_juros'))||0, parcelas:numParcelas, pagas:0, valorParcela:parcela, vencimento:val('f_venc')||'—', status:'Ativa'});
+    DB.debts.push({id:uid(), credor:val('f_desc')||'Dívida', tipo:val('f_tipo'), valorOriginal:valorAtual, valorAtual:valorAtual, juros:parseFloat(val('f_juros'))||0, parcelas:numParcelas, pagas:0, valorParcela:parcela, vencimento:val('f_venc')||'—', status:'Ativa', criadoEm:todayISO()});
   } else if(type==='card'){
     if(editId){
       const c = findCard(editId);
@@ -1276,7 +1285,7 @@ function saveForm(type, cardid, editId){
       }
     } else {
       const colors=['linear-gradient(135deg,#22c55e,#065f46)','linear-gradient(135deg,#3b82f6,#1e3a8a)','linear-gradient(135deg,#ec4899,#831843)','linear-gradient(135deg,#eab308,#78350f)'];
-      DB.cards.push({id:uid(), nome:val('f_desc'), banco:val('f_banco')||'Banco', apelido:val('f_desc')||'Cartão', ultimos4:val('f_last4')||'0000', limite:parseFloat(val('f_valor'))||1000, fechamento:parseInt(val('f_fech'))||5, vencimento:parseInt(val('f_venc'))||12, cor:colors[DB.cards.length%colors.length], contaPagamento:val('f_conta'), ativo:true, compras:[], invoices:[{id:uid(),label:'Atual',status:'Aberta',total:0,paga:0,fechamento:'--/--',vencimento:'--/--'}]});
+      DB.cards.push({id:uid(), nome:val('f_desc'), banco:val('f_banco')||'Banco', apelido:val('f_desc')||'Cartão', ultimos4:val('f_last4')||'0000', limite:parseFloat(val('f_valor'))||1000, fechamento:parseInt(val('f_fech'))||5, vencimento:parseInt(val('f_venc'))||12, cor:colors[DB.cards.length%colors.length], contaPagamento:val('f_conta'), ativo:true, criadoEm:todayISO(), compras:[], invoices:[{id:uid(),label:'Atual',status:'Aberta',total:0,paga:0,fechamento:'--/--',vencimento:'--/--'}]});
     }
   } else if(type==='account'){
     DB.accounts.push({id:uid(), name:val('f_desc')||'Nova conta', type:val('f_tipo'), balance:parseFloat(val('f_valor'))||0});

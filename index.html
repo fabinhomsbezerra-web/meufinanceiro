@@ -261,6 +261,7 @@ function icon(name, size=18, stroke=2){
 const fmt = n => (n<0?'-':'')+'R$ '+Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const pct1 = n => n.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
 const uid = () => Math.random().toString(36).slice(2,10);
+function initials(name){ const parts=(name||'').trim().split(/\s+/); return ((parts[0]?.[0]||'')+(parts[1]?.[0]||'')).toUpperCase() || 'FB'; }
 const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const todayStr = () => new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
 const todayISO = () => { const d=new Date(); const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); };
@@ -276,6 +277,7 @@ function catNames(){ return DB.categories.map(c=>c.name); }
 
 let DB = {
   theme:'dark',
+  profile:{name:'Fábio Martins Bezerra', email:'fabio@email.com'},
   accounts:[
     {id:uid(), name:'Conta Corrente Itaú', type:'Conta corrente', balance:5200.00},
     {id:uid(), name:'Poupança Caixa', type:'Poupança', balance:3100.00},
@@ -384,7 +386,7 @@ function loadDB(){
 loadDB();
 
 /* ================= STATE ================= */
-let S = { view:'dashboard', theme:'dark', cardDetail:null, filter:'Este mês', budgetOpen:false, calSelected:null };
+let S = { view:'dashboard', theme:'dark', cardDetail:null, filter:'Este mês', budgetOpen:false, calSelected:null, calMonthOffset:0 };
 
 /* ================= COMPUTED HELPERS ================= */
 function totalAccounts(){ return DB.accounts.reduce((a,c)=>a+c.balance,0); }
@@ -402,9 +404,9 @@ function totalDividasPago(){ return totalDividasOriginal()-totalDividas(); }
 function totalParcelaMensalDividas(){ return DB.debts.reduce((a,c)=>a+c.valorParcela,0); }
 function totalCardUsed(){ return DB.cards.reduce((a,c)=>a+cardUsed(c),0); }
 function totalCardLimit(){ return DB.cards.reduce((a,c)=>a+c.limite,0); }
-function cardUsed(c){ const inv = c.invoices.find(i=>i.status!=='Paga')||c.invoices[c.invoices.length-1]; return c.compras.reduce((a,p)=>a + (p.valor/p.parcelas)*(p.parcelas-p.pagas),0); }
-function cardCurrentInvoice(c){ return c.invoices.find(i=>i.status==='Aberta'||i.status==='Vencida') || c.invoices[1]; }
-function totalFaturasAbertas(){ return DB.cards.reduce((a,c)=>{const inv=cardCurrentInvoice(c); return a+(inv?inv.total:0);},0); }
+function cardUsed(c){ return c.compras.reduce((a,p)=>a + (p.valor/p.parcelas)*(p.parcelas-p.pagas),0); }
+function cardCurrentInvoice(c){ const inv = c.invoices.find(i=>i.status==='Aberta'||i.status==='Vencida') || c.invoices[1] || c.invoices[0]; return inv ? {...inv, total: cardUsed(c)} : {label:'Atual', status:'Aberta', total:cardUsed(c), fechamento:'--/--', vencimento:'--/--'}; }
+function totalFaturasAbertas(){ return DB.cards.reduce((a,c)=>a+cardUsed(c),0); }
 function categoryTotals(list, key='categoria'){
   const map = {};
   list.forEach(e=>{ map[e[key]] = (map[e[key]]||0)+e.valor; });
@@ -502,9 +504,9 @@ function renderSidebar(){
     <div class="nav">
       ${NAV_MAIN.map(n=>`<button class="nav-item ${S.view===n.v?'active':''}" data-action="nav" data-view="${n.v}">${icon(n.icon,18)}<span>${n.label}</span></button>`).join('')}
     </div>
-    <div class="sidebar-footer">
-      <div class="avatar">FB</div>
-      <div><div class="sf-name">Fábio Martins</div><div class="sf-mail">fabio@email.com</div></div>
+    <div class="sidebar-footer" style="cursor:pointer;" data-action="edit-profile">
+      <div class="avatar">${initials(DB.profile.name)}</div>
+      <div style="min-width:0;overflow:hidden;"><div class="sf-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${DB.profile.name}</div><div class="sf-mail" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${DB.profile.email}</div></div>
     </div>
   </div>`;
 }
@@ -548,7 +550,7 @@ function renderDashboard(){
   return `
   <div class="grid-2col">
     <div>
-      <div class="card" style="margin-bottom:14px;">
+      <div class="card" style="margin-bottom:14px;cursor:pointer;" data-action="nav" data-view="accounts">
         <div class="row-between">
           <div>
             <h3>${icon('eye',13)} Saldo atual</h3>
@@ -558,15 +560,15 @@ function renderDashboard(){
           <div class="iconbox" style="background:var(--green-d);color:var(--green);">${icon('wallet',20)}</div>
         </div>
         <div class="grid" style="margin-top:16px;">
-          <div style="background:var(--card2);border-radius:14px;padding:12px 14px;">
+          <div style="background:var(--card2);border-radius:14px;padding:12px 14px;cursor:pointer;" data-action="nav" data-view="incomes">
             <div class="row-between"><span class="small muted">Receitas do mês</span><span class="pill green">+${pct1(chg(rec,DB.incomesPrevMonth))}</span></div>
             <div style="font-size:19px;font-weight:800;margin-top:4px;">${fmt(rec)}</div>
           </div>
-          <div style="background:var(--card2);border-radius:14px;padding:12px 14px;">
+          <div style="background:var(--card2);border-radius:14px;padding:12px 14px;cursor:pointer;" data-action="nav" data-view="expenses">
             <div class="row-between"><span class="small muted">Despesas do mês</span><span class="pill red">+${pct1(chg(desp,DB.monthlyFlow[7].desp))}</span></div>
             <div style="font-size:19px;font-weight:800;margin-top:4px;">${fmt(desp)}</div>
           </div>
-          <div style="background:var(--card2);border-radius:14px;padding:12px 14px;">
+          <div style="background:var(--card2);border-radius:14px;padding:12px 14px;cursor:pointer;" data-action="nav" data-view="debts">
             <div class="row-between"><span class="small muted">Total de dívidas</span><span class="pill amber">${pct1(comprometimentoRenda())} da renda</span></div>
             <div style="font-size:19px;font-weight:800;margin-top:4px;">${fmt(dividas)}</div>
           </div>
@@ -585,17 +587,17 @@ function renderDashboard(){
         </div>
         <div class="card">
           <div class="card-hd"><span class="title">Resumo financeiro</span></div>
-          <div class="list-item"><div class="iconbox" style="background:var(--green-d);color:var(--green);">${icon('income',16)}</div><div style="flex:1"><div class="li-title">Receitas do mês</div></div><div class="li-value" style="color:var(--green)">${fmt(rec)}</div></div>
-          <div class="list-item"><div class="iconbox" style="background:var(--red-d);color:var(--red);">${icon('expense',16)}</div><div style="flex:1"><div class="li-title">Despesas do mês</div></div><div class="li-value" style="color:var(--red)">-${fmt(desp)}</div></div>
-          <div class="list-item"><div class="iconbox" style="background:var(--amber-d);color:var(--amber);">${icon('debt',16)}</div><div style="flex:1"><div class="li-title">Parcelas de dívidas</div></div><div class="li-value">-${fmt(totalParcelaMensalDividas())}</div></div>
-          <div class="list-item"><div class="iconbox" style="background:var(--blue-d);color:var(--blue);">${icon('card',16)}</div><div style="flex:1"><div class="li-title">Faturas abertas (cartões)</div></div><div class="li-value">-${fmt(totalFaturasAbertas())}</div></div>
+          <div class="list-item" style="cursor:pointer;" data-action="nav" data-view="incomes"><div class="iconbox" style="background:var(--green-d);color:var(--green);">${icon('income',16)}</div><div style="flex:1"><div class="li-title">Receitas do mês</div></div><div class="li-value" style="color:var(--green)">${fmt(rec)}</div></div>
+          <div class="list-item" style="cursor:pointer;" data-action="nav" data-view="expenses"><div class="iconbox" style="background:var(--red-d);color:var(--red);">${icon('expense',16)}</div><div style="flex:1"><div class="li-title">Despesas do mês</div></div><div class="li-value" style="color:var(--red)">-${fmt(desp)}</div></div>
+          <div class="list-item" style="cursor:pointer;" data-action="nav" data-view="debts"><div class="iconbox" style="background:var(--amber-d);color:var(--amber);">${icon('debt',16)}</div><div style="flex:1"><div class="li-title">Parcelas de dívidas</div></div><div class="li-value">-${fmt(totalParcelaMensalDividas())}</div></div>
+          <div class="list-item" style="cursor:pointer;" data-action="nav" data-view="cards"><div class="iconbox" style="background:var(--blue-d);color:var(--blue);">${icon('card',16)}</div><div style="flex:1"><div class="li-title">Faturas abertas (cartões)</div></div><div class="li-value">-${fmt(totalFaturasAbertas())}</div></div>
           <div class="list-item"><div style="flex:1"><div class="li-title" style="font-weight:800;">Quanto sobra no mês</div></div><div class="li-value" style="color:${disponivel>=0?'var(--green)':'var(--red)'};font-size:16px;">${fmt(disponivel)}</div></div>
         </div>
       </div>
     </div>
 
     <div>
-      <div class="card" style="margin-bottom:14px;">
+      <div class="card" style="margin-bottom:14px;cursor:pointer;" data-action="nav" data-view="accounts">
         <div class="row-between">
           <div><h3>${icon('target',13)} Patrimônio líquido</h3><div class="big-num">${fmt(patrimonio)}</div></div>
           <div class="iconbox" style="background:var(--purple-d);color:var(--purple);">${icon('target',20)}</div>
@@ -676,7 +678,8 @@ function renderExpenses(){
       <div class="list-item">
         <div class="iconbox" style="background:${catColor(e.categoria)}22;color:${catColor(e.categoria)};">${icon('expense',16)}</div>
         <div style="flex:1"><div class="li-title">${e.desc}</div><div class="li-sub">${e.categoria} · ${e.forma} · ${dateBR(e.data)}</div></div>
-        <div style="text-align:right;"><div class="li-value">${fmt(e.valor)}</div><span class="pill ${e.status==='Paga'?'green':'amber'}" style="margin-top:3px;">${e.status}</span></div>
+        <div style="text-align:right;"><div class="li-value">${fmt(e.valor)}</div><span class="pill ${e.status==='Paga'?'green':e.status==='No cartão'?'blue':'amber'}" style="margin-top:3px;">${e.status}</span></div>
+        ${e.cartaoId?`<span class="pill purple" style="margin-left:6px;">${findCard(e.cartaoId)?findCard(e.cartaoId).apelido:'Cartão'}</span>`:''}
         <button class="icon-btn" style="width:30px;height:30px;margin-left:6px;" data-action="delete-expense" data-id="${e.id}">${icon('trash',14)}</button>
       </div>`).join('')}
     </div>
@@ -910,21 +913,25 @@ function renderBudget(){
 
 /* ================= CALENDÁRIO ================= */
 function renderCalendar(){
-  const now = new Date(); const y=now.getFullYear(), m=now.getMonth();
+  const now = new Date();
+  const offset = S.calMonthOffset||0;
+  const base = new Date(now.getFullYear(), now.getMonth()+offset, 1);
+  const y=base.getFullYear(), m=base.getMonth();
+  const isCurrentMonth = offset===0;
   const firstDow = new Date(y,m,1).getDay();
   const daysInMonth = new Date(y,m+1,0).getDate();
   const eventsByDay = {};
   function addEv(day,ev){ (eventsByDay[day]=eventsByDay[day]||[]).push(ev); }
-  DB.expenses.forEach(e=>{ const d=new Date(e.data+'T00:00:00'); if(d.getMonth()===m) addEv(d.getDate(),{type:'Despesa',color:'red',text:e.desc,value:e.valor}); });
-  DB.incomes.forEach(i=>{ const d=new Date(i.data+'T00:00:00'); if(d.getMonth()===m) addEv(d.getDate(),{type:'Receita',color:'green',text:i.desc,value:i.valor}); });
-  DB.cards.forEach(c=>{ addEv(c.vencimento,{type:'Fatura',color:'blue',text:'Fatura '+c.apelido,value:cardCurrentInvoice(c).total}); });
-  DB.debts.forEach(d=>{ addEv(parseInt(d.vencimento),{type:'Dívida',color:'amber',text:d.credor,value:d.valorParcela}); });
+  DB.expenses.forEach(e=>{ const d=new Date(e.data+'T00:00:00'); if(d.getMonth()===m && d.getFullYear()===y) addEv(d.getDate(),{type:'Despesa',color:'red',text:e.desc,value:e.valor}); });
+  DB.incomes.forEach(i=>{ const d=new Date(i.data+'T00:00:00'); if(d.getMonth()===m && d.getFullYear()===y) addEv(d.getDate(),{type:'Receita',color:'green',text:i.desc,value:i.valor}); });
+  DB.cards.forEach(c=>{ if(c.vencimento<=daysInMonth) addEv(c.vencimento,{type:'Fatura',color:'blue',text:'Fatura '+c.apelido,value:cardCurrentInvoice(c).total}); });
+  DB.debts.forEach(d=>{ const day=parseInt(d.vencimento); if(day && day<=daysInMonth) addEv(day,{type:'Dívida',color:'amber',text:d.credor,value:d.valorParcela}); });
 
-  const sel = S.calSelected || now.getDate();
-  let cells=''; 
+  const sel = S.calSelected || (isCurrentMonth ? now.getDate() : 1);
+  let cells='';
   for(let i=0;i<firstDow;i++) cells+=`<div></div>`;
   for(let d=1; d<=daysInMonth; d++){
-    const isToday = d===now.getDate();
+    const isToday = isCurrentMonth && d===now.getDate();
     const has = eventsByDay[d];
     cells += `<div class="cal-day ${isToday?'today':''} ${sel===d?'selected':''}" data-action="cal-select" data-day="${d}">
       ${d}${has?`<span class="cal-dot" style="background:var(--${has[0].color})"></span>`:''}
@@ -934,11 +941,16 @@ function renderCalendar(){
   return `
   <div class="grid-2col">
     <div class="card">
-      <div class="card-hd"><span class="title">${MONTHS[m]} de ${y}</span></div>
+      <div class="card-hd">
+        <button class="icon-btn" data-action="cal-nav" data-dir="-1">${icon('chevron',16,2.4)}</button>
+        <span class="title">${MONTHS[m]} de ${y}</span>
+        <button class="icon-btn" style="transform:scaleX(-1);" data-action="cal-nav" data-dir="1">${icon('chevron',16,2.4)}</button>
+      </div>
       <div class="cal-grid">
         ${['D','S','T','Q','Q','S','S'].map(d=>`<div class="cal-dow">${d}</div>`).join('')}
         ${cells}
       </div>
+      ${!isCurrentMonth?`<button class="link-btn" style="margin-top:10px;" data-action="cal-today">Voltar para hoje</button>`:''}
     </div>
     <div class="card">
       <div class="card-hd"><span class="title">Dia ${sel} de ${MONTHS[m]}</span></div>
@@ -1024,8 +1036,11 @@ function renderSettings(){
   return `
   <div class="grid-2col">
     <div>
-      <div class="card" style="margin-bottom:14px;">
-        <div class="row" style="gap:14px;"><div class="avatar" style="width:52px;height:52px;font-size:17px;">FB</div><div><div style="font-weight:800;font-size:15px;">Fábio Martins Bezerra</div><div class="small muted">fabio@email.com</div></div></div>
+      <div class="card" style="margin-bottom:14px;cursor:pointer;" data-action="edit-profile">
+        <div class="row" style="gap:14px;justify-content:space-between;">
+          <div class="row" style="gap:14px;"><div class="avatar" style="width:52px;height:52px;font-size:17px;">${initials(DB.profile.name)}</div><div><div style="font-weight:800;font-size:15px;">${DB.profile.name}</div><div class="small muted">${DB.profile.email}</div></div></div>
+          ${icon('chevron',18)}
+        </div>
       </div>
       <div class="card" style="margin-bottom:14px;">
         <div class="card-hd"><span class="title">Preferências</span></div>
@@ -1078,7 +1093,7 @@ function mkChart(id, config){ const el=document.getElementById(id); if(!el) retu
 
 function initCharts(){
   destroyCharts();
-  const flow = DB.monthlyFlow;
+  const flow = DB.monthlyFlow.map((f,i,arr)=> i===arr.length-1 ? {m:f.m, rec:totalIncomeMonth(), desp:totalExpenseMonth()} : f);
   const flowConfig = {
     type:'bar',
     data:{ labels:flow.map(f=>f.m), datasets:[
@@ -1104,10 +1119,11 @@ function initCharts(){
   mkChart('chartCartao', { type:'bar', data:{ labels:cardData.map(c=>c.name), datasets:[{data:cardData.map(c=>c.v), backgroundColor:'#3b82f6', borderRadius:8, maxBarThickness:34}] },
     options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{ x:{grid:{color:gridColor()},ticks:{color:textColor()}}, y:{grid:{display:false},ticks:{color:textColor()}} } } });
 
-  mkChart('chartSaldo', { type:'line', data:{ labels:MONTHS.slice(0,9), datasets:[{data:DB.saldoEvolucao, borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,.12)', fill:true, tension:.4, pointRadius:0}] },
+  const saldoEvo = DB.saldoEvolucao.map((v,i,arr)=> i===arr.length-1 ? totalAccounts() : v);
+  mkChart('chartSaldo', { type:'line', data:{ labels:MONTHS.slice(0,9), datasets:[{data:saldoEvo, borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,.12)', fill:true, tension:.4, pointRadius:0}] },
     options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false},ticks:{color:textColor()}}, y:{grid:{color:gridColor()},ticks:{color:textColor()}} } } });
 
-  const dividasEvo = [17500,17100,16600,16000,15600,15300,15000,14900,14680];
+  const dividasEvo = [17500,17100,16600,16000,15600,15300,15000,14900,14680].map((v,i,arr)=> i===arr.length-1 ? totalDividas() : v);
   mkChart('chartDividas', { type:'line', data:{ labels:MONTHS.slice(0,9), datasets:[{data:dividasEvo, borderColor:'#f5455c', backgroundColor:'rgba(245,69,92,.12)', fill:true, tension:.4, pointRadius:0}] },
     options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false},ticks:{color:textColor()}}, y:{grid:{color:gridColor()},ticks:{color:textColor()}} } } });
 }
@@ -1165,9 +1181,14 @@ function openForm(type, extra){
       <div class="field"><label>Descrição</label><input id="f_desc" placeholder="Ex: Supermercado"></div>
       <div class="field-row"><div class="field"><label>Valor (R$)</label><input id="f_valor" type="number" step="0.01"></div><div class="field"><label>Data</label><input id="f_data" type="date" value="${todayISO()}"></div></div>
       <div class="field-row"><div class="field"><label>Categoria</label><select id="f_cat">${catNames().map(c=>`<option>${c}</option>`).join('')}</select></div>
-      <div class="field"><label>Forma de pagamento</label><select id="f_forma"><option>Cartão de crédito</option><option>Cartão de débito</option><option>Dinheiro</option><option>Débito automático</option><option>Pix</option></select></div></div>
+      <div class="field"><label>Forma de pagamento</label><select id="f_forma" onchange="document.getElementById('f_cartao_wrap').style.display=this.value==='Cartão de crédito'?'block':'none'"><option>Cartão de crédito</option><option>Cartão de débito</option><option>Dinheiro</option><option>Débito automático</option><option>Pix</option></select></div></div>
+      <div id="f_cartao_wrap" class="field-row" style="display:${DB.cards.length?'block':'none'}">
+        <div class="field"><label>Cartão utilizado</label><select id="f_cartao"><option value="">Selecione...</option>${DB.cards.map(c=>`<option value="${c.id}">${c.apelido}</option>`).join('')}</select></div>
+        <div class="field"><label>Nº de parcelas</label><input id="f_parcelas" type="number" value="1" min="1"></div>
+      </div>
       <div class="field-row"><div class="field"><label>Conta</label><select id="f_conta">${DB.accounts.map(a=>`<option>${a.name}</option>`).join('')}</select></div>
       <div class="field"><label>Status</label><select id="f_status"><option>Paga</option><option>Pendente</option></select></div></div>
+      <p class="small muted" style="margin:0 0 4px 0;">Se pago no cartão de crédito, o valor entra na fatura do cartão (e no limite usado) em vez de sair direto da conta — a saída da conta só acontece quando a fatura for paga.</p>
     `},
     debt: {title:'Nova dívida', fields:`
       <div class="field"><label>Credor</label><input id="f_desc" placeholder="Ex: Empréstimo Banco X"></div>
@@ -1198,6 +1219,10 @@ function openForm(type, extra){
       <div class="field"><label>Nome da categoria</label><input id="f_desc" placeholder="Ex: Pets" value="${extra&&extra.editId ? extra.editId : ''}"></div>
       <div class="field"><label>Cor</label><input id="f_color" type="color" style="height:44px;padding:4px;" value="${extra&&extra.editId ? catColor(extra.editId) : '#22c55e'}"></div>
     `},
+    profile: {title:'Editar perfil', fields:`
+      <div class="field"><label>Nome</label><input id="f_desc" value="${DB.profile.name}"></div>
+      <div class="field"><label>E-mail</label><input id="f_email" type="email" value="${DB.profile.email}"></div>
+    `},
   };
   const f = forms[type];
   openOverlay(`<div class="sheet" data-action="noop">
@@ -1214,8 +1239,17 @@ function saveForm(type, cardid, editId){
     if(inc.status==='Recebida'){ applyToAccountBalance(inc.conta, inc.valor); inc._applied=true; }
     DB.incomes.push(inc);
   } else if(type==='expense'){
-    const exp = {id:uid(), desc:val('f_desc')||'Despesa', valor:parseFloat(val('f_valor'))||0, data:val('f_data')||todayISO(), categoria:val('f_cat'), conta:val('f_conta'), forma:val('f_forma'), status:val('f_status')};
-    if(exp.status==='Paga'){ applyToAccountBalance(exp.conta, -exp.valor); exp._applied=true; }
+    const forma = val('f_forma');
+    const cardId = val('f_cartao');
+    const exp = {id:uid(), desc:val('f_desc')||'Despesa', valor:parseFloat(val('f_valor'))||0, data:val('f_data')||todayISO(), categoria:val('f_cat'), conta:val('f_conta'), forma, status:val('f_status')};
+    if(forma==='Cartão de crédito' && cardId){
+      const card = findCard(cardId);
+      const sharedId = uid();
+      if(card){ card.compras.push({id:sharedId, desc:exp.desc, valor:exp.valor, data:exp.data, categoria:exp.categoria, parcelas:parseInt(val('f_parcelas'))||1, pagas:0}); }
+      exp.cartaoId = cardId; exp.purchaseId = sharedId; exp.status = 'No cartão';
+    } else if(exp.status==='Paga'){
+      applyToAccountBalance(exp.conta, -exp.valor); exp._applied=true;
+    }
     DB.expenses.push(exp);
   } else if(type==='debt'){
     const parcela = parseFloat(val('f_parcela'))||0;
@@ -1236,6 +1270,9 @@ function saveForm(type, cardid, editId){
     DB.accounts.push({id:uid(), name:val('f_desc')||'Nova conta', type:val('f_tipo'), balance:parseFloat(val('f_valor'))||0});
   } else if(type==='purchase'){
     const c = findCard(cardid); if(c){ c.compras.push({id:uid(), desc:val('f_desc')||'Compra', valor:parseFloat(val('f_valor'))||0, data:val('f_data')||todayISO(), categoria:val('f_cat'), parcelas:parseInt(val('f_parcelas'))||1, pagas:0}); }
+  } else if(type==='profile'){
+    DB.profile.name = val('f_desc').trim() || DB.profile.name;
+    DB.profile.email = val('f_email').trim() || DB.profile.email;
   } else if(type==='category'){
     const name = val('f_desc').trim(); const color = val('f_color')||'#22c55e';
     if(name){
@@ -1277,6 +1314,7 @@ document.addEventListener('click', (e)=>{
   else if(action==='close-overlay'){ closeOverlay(); }
   else if(action==='quickadd-type'){ openForm(el.dataset.type, {cardid:el.dataset.cardid}); }
   else if(action==='save-form'){ saveForm(el.dataset.type, el.dataset.cardid, el.dataset.editid); }
+  else if(action==='edit-profile'){ openForm('profile', {}); }
   else if(action==='edit-card'){ openForm('card', {editId: el.dataset.id}); }
   else if(action==='delete-card'){
     if(confirm('Tem certeza que deseja excluir este cartão? Essa ação não pode ser desfeita.')){
@@ -1298,13 +1336,15 @@ document.addEventListener('click', (e)=>{
   }
   else if(action==='search-goto'){ S.view=el.dataset.view; if(el.dataset.cardid) S.cardDetail=el.dataset.cardid; closeOverlay(); render(); }
   else if(action==='delete-income'){ const inc=DB.incomes.find(i=>i.id===el.dataset.id); if(inc && inc._applied) applyToAccountBalance(inc.conta, -inc.valor); DB.incomes = DB.incomes.filter(i=>i.id!==el.dataset.id); render(); showToast('Receita removida'); }
-  else if(action==='delete-expense'){ const exp=DB.expenses.find(i=>i.id===el.dataset.id); if(exp && exp._applied) applyToAccountBalance(exp.conta, exp.valor); DB.expenses = DB.expenses.filter(i=>i.id!==el.dataset.id); render(); showToast('Despesa removida'); }
+  else if(action==='delete-expense'){ const exp=DB.expenses.find(i=>i.id===el.dataset.id); if(exp && exp._applied) applyToAccountBalance(exp.conta, exp.valor); if(exp && exp.cartaoId && exp.purchaseId){ const card=findCard(exp.cartaoId); if(card) card.compras = card.compras.filter(p=>p.id!==exp.purchaseId); } DB.expenses = DB.expenses.filter(i=>i.id!==el.dataset.id); render(); showToast('Despesa removida'); }
   else if(action==='delete-debt'){ DB.debts = DB.debts.filter(i=>i.id!==el.dataset.id); render(); showToast('Dívida removida'); }
   else if(action==='delete-account'){ DB.accounts = DB.accounts.filter(i=>i.id!==el.dataset.id); render(); showToast('Conta removida'); }
   else if(action==='set-payoff'){ S.payoffMethod = el.dataset.method; render(); }
   else if(action==='set-filter'){ S.filter = el.dataset.filter; render(); showToast('Filtro aplicado: '+el.dataset.filter); }
   else if(action==='export'){ showToast((el.dataset.fmt)+' gerado com sucesso!'); }
   else if(action==='cal-select'){ S.calSelected = parseInt(el.dataset.day); render(); }
+  else if(action==='cal-nav'){ S.calMonthOffset = (S.calMonthOffset||0) + parseInt(el.dataset.dir); S.calSelected = null; render(); }
+  else if(action==='cal-today'){ S.calMonthOffset = 0; S.calSelected = null; render(); }
   else if(action==='add-budget'){ showToast('Escolha uma categoria na tela de Despesas para orçar'); }
   else if(action==='add-category'){ openForm('category', {}); }
   else if(action==='open-transfer'){ showToast('Transferência entre contas simulada com sucesso!'); }

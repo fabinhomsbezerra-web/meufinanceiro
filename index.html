@@ -382,6 +382,11 @@ function loadDB(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw){ const saved = JSON.parse(raw); DB = Object.assign({}, DB, saved); }
   }catch(err){ console.warn('Não foi possível carregar os dados salvos:', err); }
+  // Migração: itens salvos antes deste recurso não têm criadoEm — sem isso, o calendário
+  // não sabe a partir de quando o vencimento recorrente deve começar a aparecer.
+  // Atribuímos a data de hoje como um padrão seguro (evita mostrar em dias já passados deste mês).
+  (DB.debts||[]).forEach(d=>{ if(!d.criadoEm) d.criadoEm = todayISO(); });
+  (DB.cards||[]).forEach(c=>{ if(!c.criadoEm) c.criadoEm = todayISO(); });
 }
 loadDB();
 

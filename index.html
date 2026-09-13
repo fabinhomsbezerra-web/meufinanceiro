@@ -26,18 +26,18 @@
   --shadow:0 8px 24px rgba(30,41,59,.08);
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-html,body{margin:0;padding:0;}
+html,body{margin:0;padding:0; overflow-x:hidden; max-width:100vw;}
 body{
   background:var(--bg); color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  min-height:100vh; overflow-x:hidden;
+  min-height:100vh; overflow-x:hidden; width:100%;
 }
 button{font-family:inherit;}
 a{color:inherit;text-decoration:none;}
 ::-webkit-scrollbar{width:8px;height:8px;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
 
-#app{display:flex; min-height:100vh;}
+#app{display:flex; min-height:100vh; max-width:100vw; overflow-x:hidden;}
 
 /* ---------- SIDEBAR ---------- */
 .sidebar{
@@ -66,22 +66,28 @@ a{color:inherit;text-decoration:none;}
 .sf-mail{font-size:11px;color:var(--dim);}
 
 /* ---------- MAIN ---------- */
-.main{flex:1; min-width:0; display:flex; flex-direction:column;}
+.main{flex:1; min-width:0; display:flex; flex-direction:column; max-width:100%; overflow-x:hidden;}
 .topbar{
   display:flex; align-items:center; justify-content:space-between; gap:14px;
   padding:18px 26px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg); z-index:20;
+  max-width:100%; overflow:hidden;
 }
 .topbar-title{font-size:22px;font-weight:700;}
 .topbar-sub{font-size:12.5px;color:var(--dim);margin-top:2px;}
-.topbar-actions{display:flex;align-items:center;gap:8px;}
+.topbar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
 .icon-btn{
   width:38px;height:38px;border-radius:11px;border:1px solid var(--border);background:var(--card);
-  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);flex-shrink:0;
 }
 .icon-btn:active{transform:scale(.94);}
 .search-box{
   display:flex;align-items:center;gap:8px; background:var(--card); border:1px solid var(--border);
   border-radius:11px; padding:8px 12px; color:var(--dim); cursor:pointer; min-width:180px;
+}
+@media (max-width:480px){
+  .search-box{min-width:auto;padding:8px;}
+  .search-box span{display:none;}
+  .topbar-sub{display:none;}
 }
 .content{padding:22px 26px 100px 26px; flex:1;}
 @media (max-width:767px){ .content{padding:16px 14px 96px 14px;} .topbar{padding:14px 16px;} }
@@ -111,11 +117,12 @@ a{color:inherit;text-decoration:none;}
 .iconbox{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .row{display:flex;align-items:center;gap:12px;}
 .row-between{display:flex;align-items:center;justify-content:space-between;}
-.list-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
+.list-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);min-width:0;}
 .list-item:last-child{border-bottom:none;}
-.li-title{font-size:13.5px;font-weight:600;}
-.li-sub{font-size:11.5px;color:var(--dim);margin-top:1px;}
-.li-value{font-size:13.5px;font-weight:700;text-align:right;}
+.list-item>[style*="flex:1"]{min-width:0;}
+.li-title{font-size:13.5px;font-weight:600;overflow-wrap:break-word;word-break:break-word;}
+.li-sub{font-size:11.5px;color:var(--dim);margin-top:1px;overflow-wrap:break-word;word-break:break-word;}
+.li-value{font-size:13.5px;font-weight:700;text-align:right;white-space:nowrap;}
 .progress{height:8px;border-radius:6px;background:var(--card2);overflow:hidden;}
 .progress > div{height:100%;border-radius:6px;}
 .tabs{display:flex;gap:6px;background:var(--card2);padding:4px;border-radius:11px;width:fit-content;}
@@ -146,6 +153,9 @@ a{color:inherit;text-decoration:none;}
 .ccard-bottom{display:flex;justify-content:space-between;align-items:flex-end;position:relative;z-index:1;}
 .ccard .cprog{height:6px;border-radius:6px;background:rgba(255,255,255,.25);overflow:hidden;margin-top:10px;}
 .ccard .cprog>div{height:100%;background:#fff;border-radius:6px;}
+.ccard-actions{position:absolute;top:14px;right:14px;display:flex;gap:6px;z-index:2;}
+.ccard-action-btn{width:28px;height:28px;border-radius:9px;border:none;background:rgba(0,0,0,.28);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.ccard-action-btn:active{background:rgba(0,0,0,.45);}
 
 /* ---------- BOTTOM NAV ---------- */
 .bottomnav{display:none;}
@@ -256,12 +266,13 @@ const todayStr = () => new Date().toLocaleDateString('pt-BR',{day:'2-digit',mont
 const todayISO = () => { const d=new Date(); const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); };
 
 /* ================= DEMO DATA ================= */
-const CAT_COLOR = {
+const CAT_COLOR_DEFAULT = {
   'Moradia':'#22c55e','Alimentação':'#f59e0b','Combustível':'#3b82f6','Saúde':'#ec4899',
   'Lazer':'#a78bfa','Assinaturas':'#22d3ee','Cartão de crédito':'#f5455c','Outros':'#94a3b8',
   'Transporte':'#0ea5e9','Educação':'#eab308','Compras':'#d946ef','Impostos':'#64748b','Energia':'#fb923c','Água':'#38bdf8','Internet':'#818cf8','Telefone':'#f472b6'
 };
-const CATEGORIES = Object.keys(CAT_COLOR);
+function catColor(name){ const c = DB.categories.find(c=>c.name===name); return c ? c.color : '#94a3b8'; }
+function catNames(){ return DB.categories.map(c=>c.name); }
 
 let DB = {
   theme:'dark',
@@ -348,7 +359,7 @@ let DB = {
     {m:'Jul',rec:8200,desp:5100},{m:'Ago',rec:8320,desp:4980},{m:'Set',rec:8750,desp:5230.5},
   ],
   saldoEvolucao:[9800,10200,9950,10600,11100,10800,11500,11950,12480.5],
-  customCategories:[],
+  categories: Object.entries(CAT_COLOR_DEFAULT).map(([name,color])=>({name,color,custom:false})),
   payoffMethod:'avalanche',
   notifications:[
     {icon:'card', color:'red', text:'Fatura BB Ourocard vence hoje — R$ 4.200,00'},
@@ -462,9 +473,9 @@ function render(){
     ${renderSidebar()}
     <div class="main">
       <div class="topbar">
-        <div>
-          <div class="topbar-title">${S.view==='cardDetail' && S.cardDetail ? findCard(S.cardDetail).apelido : title[0]}</div>
-          <div class="topbar-sub">${S.view==='cardDetail' ? 'Faturas, compras e parcelas do cartão' : title[1]}</div>
+        <div style="min-width:0; overflow:hidden;">
+          <div class="topbar-title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${S.view==='cardDetail' && S.cardDetail ? findCard(S.cardDetail).apelido : title[0]}</div>
+          <div class="topbar-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${S.view==='cardDetail' ? 'Faturas, compras e parcelas do cartão' : title[1]}</div>
         </div>
         <div class="topbar-actions">
           <div class="search-box" data-action="open-search">${icon('search',16)}<span style="font-size:12.5px;">Buscar...</span></div>
@@ -663,7 +674,7 @@ function renderExpenses(){
       <div class="card-hd"><span class="title">Lançamentos de despesa</span><button class="btn btn-red" data-action="quickadd-type" data-type="expense">${icon('plus',14)} Nova despesa</button></div>
       ${DB.expenses.slice().sort((a,b)=>a.data<b.data?1:-1).map(e=>`
       <div class="list-item">
-        <div class="iconbox" style="background:${CAT_COLOR[e.categoria]}22;color:${CAT_COLOR[e.categoria]};">${icon('expense',16)}</div>
+        <div class="iconbox" style="background:${catColor(e.categoria)}22;color:${catColor(e.categoria)};">${icon('expense',16)}</div>
         <div style="flex:1"><div class="li-title">${e.desc}</div><div class="li-sub">${e.categoria} · ${e.forma} · ${dateBR(e.data)}</div></div>
         <div style="text-align:right;"><div class="li-value">${fmt(e.valor)}</div><span class="pill ${e.status==='Paga'?'green':'amber'}" style="margin-top:3px;">${e.status}</span></div>
         <button class="icon-btn" style="width:30px;height:30px;margin-left:6px;" data-action="delete-expense" data-id="${e.id}">${icon('trash',14)}</button>
@@ -674,7 +685,7 @@ function renderExpenses(){
       <canvas id="chartCatExp" height="200"></canvas>
       ${Object.entries(categoryTotals(DB.expenses)).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
         <div class="row-between" style="padding:6px 0;font-size:12.5px;">
-          <span class="row" style="gap:8px;"><span style="width:9px;height:9px;border-radius:50%;background:${CAT_COLOR[k]||'#999'};display:inline-block;"></span>${k}</span>
+          <span class="row" style="gap:8px;"><span style="width:9px;height:9px;border-radius:50%;background:${catColor(k)};display:inline-block;"></span>${k}</span>
           <span style="font-weight:700;">${fmt(v)}</span>
         </div>`).join('')}
     </div>
@@ -688,6 +699,10 @@ function renderCards(){
     ${DB.cards.map(c=>{
       const used = cardUsed(c); const pctUsed = safeDiv(used,c.limite)*100; const inv = cardCurrentInvoice(c);
       return `<div class="ccard" style="background:${c.cor}" data-action="nav" data-view="cardDetail" data-cardid="${c.id}">
+        <div class="ccard-actions">
+          <button class="ccard-action-btn" data-action="edit-card" data-id="${c.id}">${icon('settings',13)}</button>
+          <button class="ccard-action-btn" data-action="delete-card" data-id="${c.id}">${icon('trash',13)}</button>
+        </div>
         <div class="ccard-top"><div><div class="ccard-bank">${c.apelido.toUpperCase()}</div><div class="ccard-sub">${c.banco}</div></div>${icon('card',22)}</div>
         <div class="ccard-mid"><div class="ccard-num">•••• •••• •••• ${c.ultimos4}</div></div>
         <div>
@@ -715,7 +730,13 @@ function renderCardDetail(){
   const c = findCard(S.cardDetail); if(!c) { S.view='cards'; return renderCards(); }
   const used = cardUsed(c); const pctUsed=safeDiv(used,c.limite)*100;
   return `
-  <button class="btn btn-outline" style="margin-bottom:16px;" data-action="nav" data-view="cards">${icon('chevron',14)} Voltar aos cartões</button>
+  <div class="row-between" style="margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+    <button class="btn btn-outline" data-action="nav" data-view="cards">${icon('chevron',14)} Voltar aos cartões</button>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-outline" data-action="edit-card" data-id="${c.id}">${icon('settings',13)} Editar</button>
+      <button class="btn btn-red" data-action="delete-card" data-id="${c.id}">${icon('trash',13)} Excluir</button>
+    </div>
+  </div>
   <div class="grid-2col">
     <div>
       <div class="ccard" style="background:${c.cor};margin-bottom:16px;">
@@ -738,7 +759,7 @@ function renderCardDetail(){
       <div class="card-hd"><span class="title">Compras no cartão</span><button class="btn btn-outline" data-action="quickadd-type" data-type="purchase" data-cardid="${c.id}">${icon('plus',14)} Nova compra</button></div>
       ${c.compras.map(p=>`
         <div class="list-item">
-          <div class="iconbox" style="background:${CAT_COLOR[p.categoria]}22;color:${CAT_COLOR[p.categoria]};">${icon('expense',16)}</div>
+          <div class="iconbox" style="background:${catColor(p.categoria)}22;color:${catColor(p.categoria)};">${icon('expense',16)}</div>
           <div style="flex:1;"><div class="li-title">${p.desc}</div><div class="li-sub">${p.categoria} · ${dateBR(p.data)} · ${p.parcelas>1?p.parcelas+'x de '+fmt(p.valor/p.parcelas):'à vista'}</div></div>
           <div style="text-align:right;"><div class="li-value">${fmt(p.valor)}</div>${p.parcelas>1?`<span class="pill blue" style="margin-top:3px;">${p.pagas}/${p.parcelas} pagas</span>`:''}</div>
         </div>`).join('')}
@@ -762,7 +783,7 @@ function renderInstallments(){
     ${list.map(p=>{
       const valorParcela=p.valor/p.parcelas, restantes=p.parcelas-p.pagas, totalRest=valorParcela*restantes, prog=(p.pagas/p.parcelas)*100;
       return `<div class="list-item" style="align-items:flex-start;">
-        <div class="iconbox" style="background:${CAT_COLOR[p.categoria]}22;color:${CAT_COLOR[p.categoria]};">${icon('layers',16)}</div>
+        <div class="iconbox" style="background:${catColor(p.categoria)}22;color:${catColor(p.categoria)};">${icon('layers',16)}</div>
         <div style="flex:1;">
           <div class="row-between"><div class="li-title">${p.desc}</div><div class="li-value">${fmt(totalRest)} restante</div></div>
           <div class="li-sub">${p.cardName} · ${p.parcelas}x de ${fmt(valorParcela)} · ${p.pagas} pagas / ${restantes} restantes</div>
@@ -874,10 +895,10 @@ function renderBudget(){
       const gasto = budgetSpent(b.categoria); const p = (gasto/b.limite)*100; const over = p>100;
       return `<div style="padding:14px 0;border-bottom:1px solid var(--border);">
         <div class="row-between">
-          <div class="row" style="gap:9px;"><span style="width:9px;height:9px;border-radius:50%;background:${CAT_COLOR[b.categoria]};display:inline-block;"></span><span style="font-weight:700;font-size:13.5px;">${b.categoria}</span></div>
+          <div class="row" style="gap:9px;"><span style="width:9px;height:9px;border-radius:50%;background:${catColor(b.categoria)};display:inline-block;"></span><span style="font-weight:700;font-size:13.5px;">${b.categoria}</span></div>
           <span style="font-size:12.5px;font-weight:700;color:${over?'var(--red)':'var(--dim)'}">${fmt(gasto)} / ${fmt(b.limite)}</span>
         </div>
-        <div class="progress" style="margin-top:8px;"><div style="width:${Math.min(100,p)}%;background:${over?'var(--red)':CAT_COLOR[b.categoria]};"></div></div>
+        <div class="progress" style="margin-top:8px;"><div style="width:${Math.min(100,p)}%;background:${over?'var(--red)':catColor(b.categoria)};"></div></div>
         <div class="row-between" style="margin-top:6px;">
           <span class="small ${over?'':'muted'}" style="color:${over?'var(--red)':''};">${over?'⚠ Limite ultrapassado em '+ (p-100).toFixed(0)+'%':'Restam '+fmt(Math.max(0,b.limite-gasto))}</span>
           <span class="small muted">${p.toFixed(0)}%</span>
@@ -1026,7 +1047,13 @@ function renderSettings(){
     </div>
     <div class="card">
       <div class="card-hd"><span class="title">Categorias</span><button class="btn btn-green" data-action="add-category">${icon('plus',14)} Nova</button></div>
-      ${CATEGORIES.concat(DB.customCategories).map(c=>`<div class="list-item"><span style="width:9px;height:9px;border-radius:50%;background:${CAT_COLOR[c]||'#999'};display:inline-block;"></span><div style="flex:1;padding-left:10px;">${c}</div></div>`).join('')}
+      ${DB.categories.map(c=>`
+        <div class="list-item">
+          <span style="width:11px;height:11px;border-radius:50%;background:${c.color};display:inline-block;flex-shrink:0;"></span>
+          <div style="flex:1;padding-left:10px;">${c.name}</div>
+          <button class="icon-btn" style="width:30px;height:30px;" data-action="edit-category" data-name="${c.name}">${icon('settings',13)}</button>
+          <button class="icon-btn" style="width:30px;height:30px;margin-left:6px;" data-action="delete-category" data-name="${c.name}">${icon('trash',14)}</button>
+        </div>`).join('')}
     </div>
   </div>`;
 }
@@ -1066,7 +1093,7 @@ function initCharts(){
   const catData = categoryTotals(DB.expenses);
   const catConfig = {
     type:'doughnut',
-    data:{ labels:Object.keys(catData), datasets:[{data:Object.values(catData), backgroundColor:Object.keys(catData).map(k=>CAT_COLOR[k]||'#999'), borderWidth:0}]},
+    data:{ labels:Object.keys(catData), datasets:[{data:Object.values(catData), backgroundColor:Object.keys(catData).map(k=>catColor(k)), borderWidth:0}]},
     options:{ responsive:true, cutout:'68%', plugins:{legend:{display:false}} }
   };
   mkChart('chartCat', catConfig);
@@ -1137,7 +1164,7 @@ function openForm(type, extra){
     expense: {title:'Nova despesa', fields:`
       <div class="field"><label>Descrição</label><input id="f_desc" placeholder="Ex: Supermercado"></div>
       <div class="field-row"><div class="field"><label>Valor (R$)</label><input id="f_valor" type="number" step="0.01"></div><div class="field"><label>Data</label><input id="f_data" type="date" value="${todayISO()}"></div></div>
-      <div class="field-row"><div class="field"><label>Categoria</label><select id="f_cat">${CATEGORIES.concat(DB.customCategories).map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="field-row"><div class="field"><label>Categoria</label><select id="f_cat">${catNames().map(c=>`<option>${c}</option>`).join('')}</select></div>
       <div class="field"><label>Forma de pagamento</label><select id="f_forma"><option>Cartão de crédito</option><option>Cartão de débito</option><option>Dinheiro</option><option>Débito automático</option><option>Pix</option></select></div></div>
       <div class="field-row"><div class="field"><label>Conta</label><select id="f_conta">${DB.accounts.map(a=>`<option>${a.name}</option>`).join('')}</select></div>
       <div class="field"><label>Status</label><select id="f_status"><option>Paga</option><option>Pendente</option></select></div></div>
@@ -1149,12 +1176,14 @@ function openForm(type, extra){
       <div class="field-row"><div class="field"><label>Nº de parcelas</label><input id="f_parcelas" type="number" value="12"></div><div class="field"><label>Valor da parcela</label><input id="f_parcela" type="number" step="0.01"></div></div>
       <div class="field"><label>Dia de vencimento</label><input id="f_venc" placeholder="Ex: 15"></div>
     `},
-    card: {title:'Novo cartão', fields:`
-      <div class="field"><label>Apelido do cartão</label><input id="f_desc" placeholder="Ex: Meu Cartão"></div>
-      <div class="field-row"><div class="field"><label>Banco</label><input id="f_banco" placeholder="Ex: Bradesco"></div><div class="field"><label>Últimos 4 dígitos</label><input id="f_last4" maxlength="4" placeholder="0000"></div></div>
-      <div class="field-row"><div class="field"><label>Limite (R$)</label><input id="f_valor" type="number" step="0.01"></div><div class="field"><label>Conta de pagamento</label><select id="f_conta">${DB.accounts.map(a=>`<option>${a.name}</option>`).join('')}</select></div></div>
-      <div class="field-row"><div class="field"><label>Dia de fechamento</label><input id="f_fech" type="number" value="5"></div><div class="field"><label>Dia de vencimento</label><input id="f_venc" type="number" value="12"></div></div>
-    `},
+    card: {title: extra&&extra.editId ? 'Editar cartão' : 'Novo cartão', fields:(()=>{
+      const ec = extra&&extra.editId ? findCard(extra.editId) : null;
+      return `
+      <div class="field"><label>Apelido do cartão</label><input id="f_desc" placeholder="Ex: Meu Cartão" value="${ec?ec.apelido:''}"></div>
+      <div class="field-row"><div class="field"><label>Banco</label><input id="f_banco" placeholder="Ex: Bradesco" value="${ec?ec.banco:''}"></div><div class="field"><label>Últimos 4 dígitos</label><input id="f_last4" maxlength="4" placeholder="0000" value="${ec?ec.ultimos4:''}"></div></div>
+      <div class="field-row"><div class="field"><label>Limite (R$)</label><input id="f_valor" type="number" step="0.01" value="${ec?ec.limite:''}"></div><div class="field"><label>Conta de pagamento</label><select id="f_conta">${DB.accounts.map(a=>`<option ${ec&&ec.contaPagamento===a.name?'selected':''}>${a.name}</option>`).join('')}</select></div></div>
+      <div class="field-row"><div class="field"><label>Dia de fechamento</label><input id="f_fech" type="number" value="${ec?ec.fechamento:5}"></div><div class="field"><label>Dia de vencimento</label><input id="f_venc" type="number" value="${ec?ec.vencimento:12}"></div></div>
+    `;})()},
     account: {title:'Nova conta', fields:`
       <div class="field"><label>Nome da conta</label><input id="f_desc" placeholder="Ex: Conta Corrente"></div>
       <div class="field"><label>Tipo</label><select id="f_tipo"><option>Conta corrente</option><option>Poupança</option><option>Dinheiro</option><option>Carteira</option><option>Conta digital</option><option>Investimentos</option></select></div>
@@ -1162,19 +1191,23 @@ function openForm(type, extra){
     `},
     purchase: {title:'Nova compra no cartão', fields:`
       <div class="field"><label>Descrição</label><input id="f_desc" placeholder="Ex: Loja X"></div>
-      <div class="field-row"><div class="field"><label>Valor total (R$)</label><input id="f_valor" type="number" step="0.01"></div><div class="field"><label>Categoria</label><select id="f_cat">${CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select></div></div>
+      <div class="field-row"><div class="field"><label>Valor total (R$)</label><input id="f_valor" type="number" step="0.01"></div><div class="field"><label>Categoria</label><select id="f_cat">${catNames().map(c=>`<option>${c}</option>`).join('')}</select></div></div>
       <div class="field-row"><div class="field"><label>Nº de parcelas</label><input id="f_parcelas" type="number" value="1"></div><div class="field"><label>Data da compra</label><input id="f_data" type="date" value="${todayISO()}"></div></div>
+    `},
+    category: {title: extra&&extra.editId ? 'Editar categoria' : 'Nova categoria', fields:`
+      <div class="field"><label>Nome da categoria</label><input id="f_desc" placeholder="Ex: Pets" value="${extra&&extra.editId ? extra.editId : ''}"></div>
+      <div class="field"><label>Cor</label><input id="f_color" type="color" style="height:44px;padding:4px;" value="${extra&&extra.editId ? catColor(extra.editId) : '#22c55e'}"></div>
     `},
   };
   const f = forms[type];
   openOverlay(`<div class="sheet" data-action="noop">
     <div class="sheet-hd"><h2>${f.title}</h2><button class="icon-btn" data-action="close-overlay">${icon('x',16)}</button></div>
     ${f.fields}
-    <button class="btn btn-green btn-block" style="margin-top:6px;" data-action="save-form" data-type="${type}" data-cardid="${extra&&extra.cardid||''}">${icon('check',15)} Salvar</button>
+    <button class="btn btn-green btn-block" style="margin-top:6px;" data-action="save-form" data-type="${type}" data-cardid="${extra&&extra.cardid||''}" data-editid="${extra&&extra.editId||''}">${icon('check',15)} Salvar</button>
   </div>`);
 }
 
-function saveForm(type, cardid){
+function saveForm(type, cardid, editId){
   const val = id => { const el=document.getElementById(id); return el?el.value:''; };
   if(type==='income'){
     const inc = {id:uid(), desc:val('f_desc')||'Receita', valor:parseFloat(val('f_valor'))||0, data:val('f_data')||todayISO(), categoria:val('f_cat'), conta:val('f_conta'), recorrencia:val('f_rec'), status:val('f_status')};
@@ -1188,12 +1221,38 @@ function saveForm(type, cardid){
     const parcela = parseFloat(val('f_parcela'))||0;
     DB.debts.push({id:uid(), credor:val('f_desc')||'Dívida', tipo:val('f_tipo'), valorOriginal:parseFloat(val('f_valor'))||0, valorAtual:parseFloat(val('f_valor'))||0, juros:parseFloat(val('f_juros'))||0, parcelas:parseInt(val('f_parcelas'))||1, pagas:0, valorParcela:parcela, vencimento:val('f_venc')||'—', status:'Ativa'});
   } else if(type==='card'){
-    const colors=['linear-gradient(135deg,#22c55e,#065f46)','linear-gradient(135deg,#3b82f6,#1e3a8a)','linear-gradient(135deg,#ec4899,#831843)','linear-gradient(135deg,#eab308,#78350f)'];
-    DB.cards.push({id:uid(), nome:val('f_desc'), banco:val('f_banco')||'Banco', apelido:val('f_desc')||'Cartão', ultimos4:val('f_last4')||'0000', limite:parseFloat(val('f_valor'))||1000, fechamento:parseInt(val('f_fech'))||5, vencimento:parseInt(val('f_venc'))||12, cor:colors[DB.cards.length%colors.length], contaPagamento:val('f_conta'), ativo:true, compras:[], invoices:[{id:uid(),label:'Set/2026 (atual)',status:'Aberta',total:0,paga:0,fechamento:'--/09',vencimento:'--/09'}]});
+    if(editId){
+      const c = findCard(editId);
+      if(c){
+        c.apelido = val('f_desc')||c.apelido; c.nome = c.apelido; c.banco = val('f_banco')||c.banco;
+        c.ultimos4 = val('f_last4')||c.ultimos4; c.limite = parseFloat(val('f_valor'))||c.limite;
+        c.contaPagamento = val('f_conta')||c.contaPagamento; c.fechamento = parseInt(val('f_fech'))||c.fechamento; c.vencimento = parseInt(val('f_venc'))||c.vencimento;
+      }
+    } else {
+      const colors=['linear-gradient(135deg,#22c55e,#065f46)','linear-gradient(135deg,#3b82f6,#1e3a8a)','linear-gradient(135deg,#ec4899,#831843)','linear-gradient(135deg,#eab308,#78350f)'];
+      DB.cards.push({id:uid(), nome:val('f_desc'), banco:val('f_banco')||'Banco', apelido:val('f_desc')||'Cartão', ultimos4:val('f_last4')||'0000', limite:parseFloat(val('f_valor'))||1000, fechamento:parseInt(val('f_fech'))||5, vencimento:parseInt(val('f_venc'))||12, cor:colors[DB.cards.length%colors.length], contaPagamento:val('f_conta'), ativo:true, compras:[], invoices:[{id:uid(),label:'Atual',status:'Aberta',total:0,paga:0,fechamento:'--/--',vencimento:'--/--'}]});
+    }
   } else if(type==='account'){
     DB.accounts.push({id:uid(), name:val('f_desc')||'Nova conta', type:val('f_tipo'), balance:parseFloat(val('f_valor'))||0});
   } else if(type==='purchase'){
-    const c = findCard(cardid); if(c){ c.compras.push({id:uid(), desc:val('f_desc')||'Compra', valor:parseFloat(val('f_valor'))||0, data:val('f_data'), categoria:val('f_cat'), parcelas:parseInt(val('f_parcelas'))||1, pagas:0}); }
+    const c = findCard(cardid); if(c){ c.compras.push({id:uid(), desc:val('f_desc')||'Compra', valor:parseFloat(val('f_valor'))||0, data:val('f_data')||todayISO(), categoria:val('f_cat'), parcelas:parseInt(val('f_parcelas'))||1, pagas:0}); }
+  } else if(type==='category'){
+    const name = val('f_desc').trim(); const color = val('f_color')||'#22c55e';
+    if(name){
+      if(editId){
+        const cat = DB.categories.find(c=>c.name===editId);
+        if(cat){
+          if(name!==editId){
+            DB.expenses.forEach(e=>{ if(e.categoria===editId) e.categoria=name; });
+            DB.budgets.forEach(b=>{ if(b.categoria===editId) b.categoria=name; });
+            DB.cards.forEach(c=>c.compras.forEach(p=>{ if(p.categoria===editId) p.categoria=name; }));
+          }
+          cat.name = name; cat.color = color;
+        }
+      } else if(!DB.categories.find(c=>c.name===name)){
+        DB.categories.push({name, color, custom:true});
+      }
+    }
   }
   closeOverlay();
   showToast('Lançamento salvo com sucesso!');
@@ -1217,7 +1276,26 @@ document.addEventListener('click', (e)=>{
   else if(action==='open-search'){ openSearch(); }
   else if(action==='close-overlay'){ closeOverlay(); }
   else if(action==='quickadd-type'){ openForm(el.dataset.type, {cardid:el.dataset.cardid}); }
-  else if(action==='save-form'){ saveForm(el.dataset.type, el.dataset.cardid); }
+  else if(action==='save-form'){ saveForm(el.dataset.type, el.dataset.cardid, el.dataset.editid); }
+  else if(action==='edit-card'){ openForm('card', {editId: el.dataset.id}); }
+  else if(action==='delete-card'){
+    if(confirm('Tem certeza que deseja excluir este cartão? Essa ação não pode ser desfeita.')){
+      DB.cards = DB.cards.filter(c=>c.id!==el.dataset.id);
+      if(S.cardDetail===el.dataset.id){ S.cardDetail=null; S.view='cards'; }
+      render(); showToast('Cartão excluído');
+    }
+  }
+  else if(action==='edit-category'){ openForm('category', {editId: el.dataset.name}); }
+  else if(action==='delete-category'){
+    if(confirm('Excluir a categoria "'+el.dataset.name+'"? Lançamentos existentes com essa categoria passarão a usar "Outros".')){
+      DB.categories = DB.categories.filter(c=>c.name!==el.dataset.name);
+      if(!DB.categories.find(c=>c.name==='Outros')) DB.categories.push({name:'Outros',color:'#94a3b8',custom:false});
+      DB.expenses.forEach(e=>{ if(e.categoria===el.dataset.name) e.categoria='Outros'; });
+      DB.budgets = DB.budgets.filter(b=>b.categoria!==el.dataset.name);
+      DB.cards.forEach(c=>c.compras.forEach(p=>{ if(p.categoria===el.dataset.name) p.categoria='Outros'; }));
+      render(); showToast('Categoria excluída');
+    }
+  }
   else if(action==='search-goto'){ S.view=el.dataset.view; if(el.dataset.cardid) S.cardDetail=el.dataset.cardid; closeOverlay(); render(); }
   else if(action==='delete-income'){ const inc=DB.incomes.find(i=>i.id===el.dataset.id); if(inc && inc._applied) applyToAccountBalance(inc.conta, -inc.valor); DB.incomes = DB.incomes.filter(i=>i.id!==el.dataset.id); render(); showToast('Receita removida'); }
   else if(action==='delete-expense'){ const exp=DB.expenses.find(i=>i.id===el.dataset.id); if(exp && exp._applied) applyToAccountBalance(exp.conta, exp.valor); DB.expenses = DB.expenses.filter(i=>i.id!==el.dataset.id); render(); showToast('Despesa removida'); }
@@ -1228,12 +1306,13 @@ document.addEventListener('click', (e)=>{
   else if(action==='export'){ showToast((el.dataset.fmt)+' gerado com sucesso!'); }
   else if(action==='cal-select'){ S.calSelected = parseInt(el.dataset.day); render(); }
   else if(action==='add-budget'){ showToast('Escolha uma categoria na tela de Despesas para orçar'); }
-  else if(action==='add-category'){ const name=prompt('Nome da nova categoria:'); if(name){ DB.customCategories.push(name); CAT_COLOR[name]='#'+Math.floor(Math.random()*16777215).toString(16); render(); showToast('Categoria criada'); } }
+  else if(action==='add-category'){ openForm('category', {}); }
   else if(action==='open-transfer'){ showToast('Transferência entre contas simulada com sucesso!'); }
   else if(action==='reset-data'){ if(confirm('Isso vai apagar todos os seus lançamentos e restaurar os dados de demonstração. Continuar?')){ try{ localStorage.removeItem(STORAGE_KEY); }catch(err){} location.reload(); } }
   else if(action==='clear-all-data'){
     if(confirm('Isso vai apagar TODOS os dados (receitas, despesas, cartões, dívidas, contas e orçamentos) e deixar o app zerado para você começar do zero. Essa ação não pode ser desfeita. Continuar?')){
-      DB.accounts=[]; DB.incomes=[]; DB.expenses=[]; DB.cards=[]; DB.debts=[]; DB.budgets=[]; DB.customCategories=[];
+      DB.accounts=[]; DB.incomes=[]; DB.expenses=[]; DB.cards=[]; DB.debts=[]; DB.budgets=[];
+      DB.categories = Object.entries(CAT_COLOR_DEFAULT).map(([name,color])=>({name,color,custom:false}));
       DB.incomesPrevMonth=0; DB.expensesPrevMonth={};
       DB.monthlyFlow = MONTHS.slice(0,9).map(m=>({m, rec:0, desp:0}));
       DB.saldoEvolucao = new Array(9).fill(0);

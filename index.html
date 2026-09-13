@@ -674,14 +674,17 @@ function renderExpenses(){
   <div class="grid-2col">
     <div class="card">
       <div class="card-hd"><span class="title">Lançamentos de despesa</span><button class="btn btn-red" data-action="quickadd-type" data-type="expense">${icon('plus',14)} Nova despesa</button></div>
-      ${DB.expenses.slice().sort((a,b)=>a.data<b.data?1:-1).map(e=>`
+      ${DB.expenses.slice().sort((a,b)=>a.data<b.data?1:-1).map(e=>{
+        const purchase = (e.cartaoId && e.purchaseId) ? findCard(e.cartaoId)?.compras.find(p=>p.id===e.purchaseId) : null;
+        const parcelaInfo = purchase && purchase.parcelas>1 ? ` · ${purchase.parcelas}x de ${fmt(purchase.valor/purchase.parcelas)}` : '';
+        return `
       <div class="list-item">
         <div class="iconbox" style="background:${catColor(e.categoria)}22;color:${catColor(e.categoria)};">${icon('expense',16)}</div>
-        <div style="flex:1"><div class="li-title">${e.desc}</div><div class="li-sub">${e.categoria} · ${e.forma} · ${dateBR(e.data)}</div></div>
+        <div style="flex:1"><div class="li-title">${e.desc}</div><div class="li-sub">${e.categoria} · ${e.forma} · ${dateBR(e.data)}${parcelaInfo}</div></div>
         <div style="text-align:right;"><div class="li-value">${fmt(e.valor)}</div><span class="pill ${e.status==='Paga'?'green':e.status==='No cartão'?'blue':'amber'}" style="margin-top:3px;">${e.status}</span></div>
         ${e.cartaoId?`<span class="pill purple" style="margin-left:6px;">${findCard(e.cartaoId)?findCard(e.cartaoId).apelido:'Cartão'}</span>`:''}
         <button class="icon-btn" style="width:30px;height:30px;margin-left:6px;" data-action="delete-expense" data-id="${e.id}">${icon('trash',14)}</button>
-      </div>`).join('')}
+      </div>`;}).join('')}
     </div>
     <div class="card">
       <div class="card-hd"><span class="title">Por categoria</span></div>
@@ -750,12 +753,15 @@ function renderCardDetail(){
       </div>
       <div class="card" style="margin-bottom:16px;">
         <div class="card-hd"><span class="title">Faturas</span></div>
-        ${c.invoices.map(inv=>`
+        ${c.invoices.map(inv=>{
+          const isCurrent = inv.status==='Aberta'||inv.status==='Vencida';
+          const total = isCurrent ? used : inv.total;
+          return `
           <div class="list-item">
             <div class="iconbox" style="background:${statusColor(inv.status)}22;color:${statusColor(inv.status)};">${icon('invoice',16)}</div>
             <div style="flex:1;"><div class="li-title">${inv.label}</div><div class="li-sub">Fecha ${inv.fechamento} · Vence ${inv.vencimento}</div></div>
-            <div style="text-align:right;"><div class="li-value">${fmt(inv.total)}</div><span class="pill" style="background:${statusColor(inv.status)}22;color:${statusColor(inv.status)};margin-top:3px;">${inv.status}</span></div>
-          </div>`).join('')}
+            <div style="text-align:right;"><div class="li-value">${fmt(total)}</div><span class="pill" style="background:${statusColor(inv.status)}22;color:${statusColor(inv.status)};margin-top:3px;">${inv.status}</span></div>
+          </div>`;}).join('')}
       </div>
     </div>
     <div class="card">

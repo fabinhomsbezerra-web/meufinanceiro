@@ -776,6 +776,8 @@ function renderCardDetail(){
           <div class="iconbox" style="background:${catColor(p.categoria)}22;color:${catColor(p.categoria)};">${icon('expense',16)}</div>
           <div style="flex:1;"><div class="li-title">${p.desc}</div><div class="li-sub">${p.categoria} · ${dateBR(p.data)} · ${p.parcelas>1?p.parcelas+'x de '+fmt(p.valor/p.parcelas):'à vista'}</div></div>
           <div style="text-align:right;"><div class="li-value">${fmt(p.valor)}</div>${p.parcelas>1?`<span class="pill blue" style="margin-top:3px;">${p.pagas}/${p.parcelas} pagas</span>`:''}</div>
+          <button class="icon-btn" style="width:30px;height:30px;margin-left:6px;" data-action="edit-purchase" data-id="${p.id}" data-cardid="${c.id}">${icon('settings',13)}</button>
+          <button class="icon-btn" style="width:30px;height:30px;margin-left:6px;" data-action="delete-purchase" data-id="${p.id}" data-cardid="${c.id}">${icon('trash',14)}</button>
         </div>`).join('')}
     </div>
   </div>`;
@@ -1234,11 +1236,14 @@ function openForm(type, extra){
       <div class="field"><label>Tipo</label><select id="f_tipo"><option>Conta corrente</option><option>Poupança</option><option>Dinheiro</option><option>Carteira</option><option>Conta digital</option><option>Investimentos</option></select></div>
       <div class="field"><label>Saldo inicial (R$)</label><input id="f_valor" type="number" step="0.01"></div>
     `},
-    purchase: {title:'Nova compra no cartão', fields:`
-      <div class="field"><label>Descrição</label><input id="f_desc" placeholder="Ex: Loja X"></div>
-      <div class="field-row"><div class="field"><label>Valor total (R$)</label><input id="f_valor" type="number" step="0.01"></div><div class="field"><label>Categoria</label><select id="f_cat">${catNames().map(c=>`<option>${c}</option>`).join('')}</select></div></div>
-      <div class="field-row"><div class="field"><label>Nº de parcelas</label><input id="f_parcelas" type="number" value="1"></div><div class="field"><label>Data da compra</label><input id="f_data" type="date" value="${todayISO()}"></div></div>
-    `},
+    purchase: {title: extra&&extra.editId ? 'Editar compra' : 'Nova compra no cartão', fields:(()=>{
+      const ec = extra&&extra.editId ? findCard(extra.cardid)?.compras.find(p=>p.id===extra.editId) : null;
+      return `
+      <div class="field"><label>Descrição</label><input id="f_desc" placeholder="Ex: Loja X" value="${ec?ec.desc:''}"></div>
+      <div class="field-row"><div class="field"><label>Valor total (R$)</label><input id="f_valor" type="number" step="0.01" value="${ec?ec.valor:''}"></div><div class="field"><label>Categoria</label><select id="f_cat">${catNames().map(c=>`<option ${ec&&ec.categoria===c?'selected':''}>${c}</option>`).join('')}</select></div></div>
+      <div class="field-row"><div class="field"><label>Nº de parcelas</label><input id="f_parcelas" type="number" value="${ec?ec.parcelas:1}"></div><div class="field"><label>Data da compra</label><input id="f_data" type="date" value="${ec?ec.data:todayISO()}"></div></div>
+      ${ec?`<div class="field"><label>Parcelas já pagas</label><input id="f_pagas" type="number" value="${ec.pagas}" min="0"></div>`:''}
+    `;})()},
     category: {title: extra&&extra.editId ? 'Editar categoria' : 'Nova categoria', fields:`
       <div class="field"><label>Nome da categoria</label><input id="f_desc" placeholder="Ex: Pets" value="${extra&&extra.editId ? extra.editId : ''}"></div>
       <div class="field"><label>Cor</label><input id="f_color" type="color" style="height:44px;padding:4px;" value="${extra&&extra.editId ? catColor(extra.editId) : '#22c55e'}"></div>
@@ -1295,7 +1300,20 @@ function saveForm(type, cardid, editId){
   } else if(type==='account'){
     DB.accounts.push({id:uid(), name:val('f_desc')||'Nova conta', type:val('f_tipo'), balance:parseFloat(val('f_valor'))||0});
   } else if(type==='purchase'){
-    const c = findCard(cardid); if(c){ c.compras.push({id:uid(), desc:val('f_desc')||'Compra', valor:parseFloat(val('f_valor'))||0, data:val('f_data')||todayISO(), categoria:val('f_cat'), parcelas:parseInt(val('f_parcelas'))||1, pagas:0}); }
+    const c = findCard(cardid);
+    if(c){
+      if(editId){
+        const p = c.compras.find(p=>p.id===editId);
+        if(p){
+          p.desc = val('f_desc')||p.desc; p.valor = parseFloat(val('f_valor'))||p.valor; p.data = val('f_data')||p.data;
+          p.categoria = val('f_cat')||p.categoria; p.parcelas = parseInt(val('f_parcelas'))||p.parcelas; p.pagas = Math.min(parseInt(val('f_pagas'))||0, p.parcelas);
+          const linkedExp = DB.expenses.find(e=>e.purchaseId===editId);
+          if(linkedExp){ linkedExp.desc=p.desc; linkedExp.valor=p.valor; linkedExp.data=p.data; linkedExp.categoria=p.categoria; }
+        }
+      } else {
+        c.compras.push({id:uid(), desc:val('f_desc')||'Compra', valor:parseFloat(val('f_valor'))||0, data:val('f_data')||todayISO(), categoria:val('f_cat'), parcelas:parseInt(val('f_parcelas'))||1, pagas:0});
+      }
+    }
   } else if(type==='profile'){
     DB.profile.name = val('f_desc').trim() || DB.profile.name;
     DB.profile.email = val('f_email').trim() || DB.profile.email;
@@ -1342,6 +1360,16 @@ document.addEventListener('click', (e)=>{
   else if(action==='save-form'){ saveForm(el.dataset.type, el.dataset.cardid, el.dataset.editid); }
   else if(action==='edit-profile'){ openForm('profile', {}); }
   else if(action==='edit-card'){ openForm('card', {editId: el.dataset.id}); }
+  else if(action==='edit-purchase'){ openForm('purchase', {cardid: el.dataset.cardid, editId: el.dataset.id}); }
+  else if(action==='delete-purchase'){
+    if(confirm('Excluir esta compra do cartão? Se ela tiver parcelas pendentes, o valor sai da fatura e do limite usado.')){
+      const card = findCard(el.dataset.cardid);
+      if(card) card.compras = card.compras.filter(p=>p.id!==el.dataset.id);
+      const linkedExp = DB.expenses.find(e=>e.purchaseId===el.dataset.id);
+      if(linkedExp) DB.expenses = DB.expenses.filter(e=>e.id!==linkedExp.id);
+      render(); showToast('Compra excluída');
+    }
+  }
   else if(action==='delete-card'){
     if(confirm('Tem certeza que deseja excluir este cartão? Essa ação não pode ser desfeita.')){
       DB.cards = DB.cards.filter(c=>c.id!==el.dataset.id);
